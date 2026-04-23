@@ -42,7 +42,7 @@ public class ProjectController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<void> deleteProject(@PathVariable Long id){
+    public ResponseEntity<Void> deleteProject(@PathVariable Long id){
         Long userId = 1L;
         projectService. softDelete(id, userId);
         return ResponseEntity.noContent().build();
