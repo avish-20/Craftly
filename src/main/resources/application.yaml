@@ -7,6 +7,8 @@ spring:
     username: testUser
     password: password
     driver-class-name: org.postgresql.Driver
+    hikari:
+      coonection-init-sql: SET TIME ZONE 'Asia/Kolkata'
 
   jpa:
     hibernate:

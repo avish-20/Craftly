@@ -36,15 +36,16 @@ public class ProjectMemberController {
     }
 
     @PatchMapping("/{memberId}")
-    public ResponseEntity<MemberResponse> updateProjectMember(@PathVariable Long projectId, @PathVariable Long memberId, @RequestBody UpdateMemberRoleRequest request) {
+    public ResponseEntity<MemberResponse> updateProjectMemberRole(@PathVariable Long projectId, @PathVariable Long memberId, @RequestBody UpdateMemberRoleRequest request) {
         Long userId = 1L;
         return ResponseEntity.ok(projectMemberService.updateMemeberRole(projectId, memberId, request, userId));
     }
 
     @DeleteMapping("/{memberId}")
-    public ResponseEntity<MemberResponse> deleteProjectMember(@PathVariable Long projectId, @PathVariable Long memberId, @RequestBody InviteMemberRequest request) {
+    public ResponseEntity<Void> removeProjectMember(@PathVariable Long projectId, @PathVariable Long memberId) {
         Long userId = 1L;
-        return ResponseEntity.ok(projectMemberService.deleteMemeberRole(projectId, memberId, request, userId));
+        projectMemberService.removeProjectMember(projectId, memberId, userId);
+        return ResponseEntity.noContent().build();
     }
 
 }
