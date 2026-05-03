@@ -2,13 +2,16 @@ spring:
   application:
     name: Craftly
 
+  jackson:
+    time-zone: UTC   # optional but recommended
+
   datasource:
     url: jdbc:postgresql://localhost:9000/testDB?currentSchema=public
     username: testUser
     password: password
     driver-class-name: org.postgresql.Driver
     hikari:
-      coonection-init-sql: SET TIME ZONE 'Asia/Kolkata'
+      connection-init-sql: SET TIME ZONE 'UTC'
 
   jpa:
     hibernate:

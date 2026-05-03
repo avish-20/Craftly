@@ -5,6 +5,7 @@ import com.avish.Craftly.dto.member.MemberResponse;
 import com.avish.Craftly.dto.member.UpdateMemberRoleRequest;
 import com.avish.Craftly.entity.ProjectMember;
 import com.avish.Craftly.service.ProjectMemberService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -29,14 +30,14 @@ public class ProjectMemberController {
     }
 
     @PostMapping
-    public ResponseEntity<MemberResponse> addProjectMember(@PathVariable Long projectId, @RequestBody InviteMemberRequest request) {
+    public ResponseEntity<MemberResponse> addProjectMember(@PathVariable Long projectId, @RequestBody @Valid InviteMemberRequest request) {
         Long userId = 1L;
         return ResponseEntity.status(HttpStatus.CREATED).body(projectMemberService.inviteMember(projectId, request, userId));
 
     }
 
     @PatchMapping("/{memberId}")
-    public ResponseEntity<MemberResponse> updateProjectMemberRole(@PathVariable Long projectId, @PathVariable Long memberId, @RequestBody UpdateMemberRoleRequest request) {
+    public ResponseEntity<MemberResponse> updateProjectMemberRole(@PathVariable Long projectId, @PathVariable Long memberId, @RequestBody @Valid UpdateMemberRoleRequest request) {
         Long userId = 1L;
         return ResponseEntity.ok(projectMemberService.updateMemeberRole(projectId, memberId, request, userId));
     }

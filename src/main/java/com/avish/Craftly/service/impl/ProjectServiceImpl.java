@@ -4,8 +4,13 @@ import com.avish.Craftly.dto.project.ProjectRequest;
 import com.avish.Craftly.dto.project.ProjectResponse;
 import com.avish.Craftly.dto.project.ProjectSummaryResponse;
 import com.avish.Craftly.entity.Project;
+import com.avish.Craftly.entity.ProjectMember;
+import com.avish.Craftly.entity.ProjectMemberId;
 import com.avish.Craftly.entity.User;
+import com.avish.Craftly.enums.ProjectRole;
+import com.avish.Craftly.error.ResourceNotFoundException;
 import com.avish.Craftly.mapper.ProjectMapper;
+import com.avish.Craftly.repository.ProjectMemberRepository;
 import com.avish.Craftly.repository.ProjectRepository;
 import com.avish.Craftly.repository.UserRepository;
 import com.avish.Craftly.service.ProjectService;
@@ -27,6 +32,7 @@ public class ProjectServiceImpl implements ProjectService {
     ProjectRepository projectRepository;
     UserRepository userRepository;
     ProjectMapper projectMapper;
+    ProjectMemberRepository projectMemberRepository;
 
     @Override
     public List<ProjectSummaryResponse> getUserProjects(Long userId) {
@@ -43,22 +49,34 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Override
     public ProjectResponse getUserProjectById(Long id, Long userId) {
-        Project project = projectRepository.findAccessibleById(id, userId).orElseThrow();
+        Project project = getAccessibleProjectById(id, userId);
         return projectMapper.toProjectResponse(project);
     }
 
     @Override
     @Transactional
     public ProjectResponse createProject(ProjectRequest request, Long userId) {
-        User owner = userRepository.findById(userId).orElseThrow();
+        User owner = userRepository.findById(userId).orElseThrow(()-> new ResourceNotFoundException("User", userId.toString()));
 
         Project project = Project.builder()
                 .name(request.name())
-                .owner(owner)
                 .isPublic(false)
                 .build();
-
         project = projectRepository.save(project);
+        ProjectMemberId projectMemberId = new ProjectMemberId(project.getId(),owner.getId());
+
+        ProjectMember projectMember = ProjectMember.builder()
+                .id(projectMemberId)
+                .projectRole(ProjectRole.OWNER)
+                .user(owner)
+                .acceptedAt(Instant.now())
+                .invitedAt(Instant.now())
+                .project(project)
+                .build();
+
+        projectMemberRepository.save(projectMember);
+
+
         //model mapper does not fully support record
 
 
@@ -68,9 +86,9 @@ public class ProjectServiceImpl implements ProjectService {
     @Override
     public ProjectResponse updateProject(Long id, ProjectRequest request, Long userId) {
         Project project = getAccessibleProjectById(id, userId);
-        if(!project.getOwner().getId().equals(userId)) {
-            throw new RuntimeException("You are not allowed to update the name");
-        }
+//        if(!project.getOwner().getId().equals(userId)) {
+//            throw new RuntimeException("You are not allowed to update the name");
+//        }
         project.setName(request.name());
         project = projectRepository.save(project);
         return projectMapper.toProjectResponse(project);
@@ -79,9 +97,9 @@ public class ProjectServiceImpl implements ProjectService {
     @Override
     public void softDelete(Long id, Long userId) {
         Project project = getAccessibleProjectById(id, userId);
-        if(!project.getOwner().getId().equals(userId)) {
-            throw new RuntimeException("You are not allowed to delete the project");
-        }
+//        if(!project.getOwner().getId().equals(userId)) {
+//            throw new RuntimeException("You are not allowed to delete the project");
+//        }
         project.setDeletedAt(Instant.now());
         projectRepository.save(project);
 
@@ -89,6 +107,8 @@ public class ProjectServiceImpl implements ProjectService {
 
     //Internal methods
     public Project getAccessibleProjectById(Long id, Long userId) {
-        return projectRepository.findAccessibleById(id, userId).orElseThrow();
+        return projectRepository.findAccessibleById(id, userId).orElseThrow(
+                () -> new ResourceNotFoundException("Project", id.toString())
+        );
     }
 }
