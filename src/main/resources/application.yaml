@@ -23,3 +23,6 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         jdbc:
           time_zone: UTC
+
+jwt:
+  secret-key: as9bsjbhjccibiduiw983bdbcc9hn2bbic92hcnc9829hedcnhh

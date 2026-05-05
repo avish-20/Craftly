@@ -13,6 +13,7 @@ import com.avish.Craftly.mapper.ProjectMapper;
 import com.avish.Craftly.repository.ProjectMemberRepository;
 import com.avish.Craftly.repository.ProjectRepository;
 import com.avish.Craftly.repository.UserRepository;
+import com.avish.Craftly.security.AuthUtil;
 import com.avish.Craftly.service.ProjectService;
 import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
@@ -33,14 +34,15 @@ public class ProjectServiceImpl implements ProjectService {
     UserRepository userRepository;
     ProjectMapper projectMapper;
     ProjectMemberRepository projectMemberRepository;
+    AuthUtil authUtil;
 
     @Override
-    public List<ProjectSummaryResponse> getUserProjects(Long userId) {
+    public List<ProjectSummaryResponse> getUserProjects() {
 //        return projectRepository.findAllAccessibleByUser(userId)
 //                .stream()
 //                .map(projectMapper::toProjectSummaryResponse)
 //                .collect(Collectors.toList());
-
+        Long userId = authUtil.getCurrentUserId();
         var projects = projectRepository.findAllAccessibleByUser(userId);
         return projectMapper.toListOfProjectSummaryResponse(projects);
 
@@ -48,22 +50,27 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     @Override
-    public ProjectResponse getUserProjectById(Long id, Long userId) {
+    public ProjectResponse getUserProjectById(Long id) {
+        Long userId = authUtil.getCurrentUserId();
         Project project = getAccessibleProjectById(id, userId);
         return projectMapper.toProjectResponse(project);
     }
 
     @Override
     @Transactional
-    public ProjectResponse createProject(ProjectRequest request, Long userId) {
-        User owner = userRepository.findById(userId).orElseThrow(()-> new ResourceNotFoundException("User", userId.toString()));
-
+    public ProjectResponse createProject(ProjectRequest request) {
+        Long userId = authUtil.getCurrentUserId();
+        //User owner = userRepository.findById(userId).orElseThrow(()-> new ResourceNotFoundException("User", userId.toString()));
+        //For above line we are making db call but we can create proxy reference object with
+        // id just from jpa It will not make  adb call unless other filed s of owner required"
+        //Make sure to use this with transactional annotation, otherwise it will throw error when we try to save project member because of detached entity
+        User owner = userRepository.getReferenceById(userId);
         Project project = Project.builder()
                 .name(request.name())
                 .isPublic(false)
                 .build();
         project = projectRepository.save(project);
-        ProjectMemberId projectMemberId = new ProjectMemberId(project.getId(),owner.getId());
+        ProjectMemberId projectMemberId = new ProjectMemberId(project.getId(), owner.getId());
 
         ProjectMember projectMember = ProjectMember.builder()
                 .id(projectMemberId)
@@ -84,7 +91,8 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     @Override
-    public ProjectResponse updateProject(Long id, ProjectRequest request, Long userId) {
+    public ProjectResponse updateProject(Long id, ProjectRequest request) {
+        Long userId = authUtil.getCurrentUserId();
         Project project = getAccessibleProjectById(id, userId);
 //        if(!project.getOwner().getId().equals(userId)) {
 //            throw new RuntimeException("You are not allowed to update the name");
@@ -95,7 +103,8 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     @Override
-    public void softDelete(Long id, Long userId) {
+    public void softDelete(Long id) {
+        Long userId = authUtil.getCurrentUserId();
         Project project = getAccessibleProjectById(id, userId);
 //        if(!project.getOwner().getId().equals(userId)) {
 //            throw new RuntimeException("You are not allowed to delete the project");
